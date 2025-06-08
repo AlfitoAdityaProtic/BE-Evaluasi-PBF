@@ -8,3 +8,6 @@ use CodeIgniter\Router\RouteCollection;
 // $routes->get('/', 'Home::index');
 $routes->resource('dosen', ['controller' => 'DosenController']);
 $routes->resource('mahasiswa', ['controller' => 'MahasiswaController']);
+
+$routes->post('auth/register', 'Auth::register');
+$routes->post('auth/login', 'Auth::login');
