@@ -2,19 +2,13 @@
 
 namespace App\Controllers;
 
-use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use Config\Database;
+
 
 class DosenController extends ResourceController
 {
-    protected $db;
+    protected $modelName = 'App\Models\DosenModel';
     protected $format = 'json';
-
-    public function __construct()
-    {
-        $this->db = Database::connect();
-    }
 
     /**
      * Return an array of resource objects, themselves in array format.
@@ -23,12 +17,9 @@ class DosenController extends ResourceController
      */
     public function index()
     {
-        $query = $this->db->query("SELECT * FROM dosens");
-        $result = $query->getResult();
-
         return $this->respond([
             'message' => 'success',
-            'data_dosen' => $result
+            'data' => $this->model->findAll()
         ], 200);
     }
 
@@ -41,16 +32,14 @@ class DosenController extends ResourceController
      */
     public function show($id = null)
     {
-        $query = $this->db->query("SELECT * FROM dosens WHERE id = ?", [$id]);
-        $row = $query->getRow();
-
-        if ($row === null) {
-            return $this->failNotFound('Data Dosen tidak ditemukan');
+        $dosen = $this->model->find($id);
+        if (!$dosen) {
+            return $this->failNotFound('Data dosen tidak ditemukan');
         }
 
         return $this->respond([
             'message' => 'success',
-            'dosen_byid' => $row
+            'data' => $dosen
         ], 200);
     }
 
@@ -71,27 +60,23 @@ class DosenController extends ResourceController
      */
     public function create()
     {
-        $rules = $this->validate([
+        $rules = [
             'nama'  => 'required',
             'nidn'  => 'required',
             'email' => 'required|valid_email',
-            'prodi' => 'required',
-        ]);
+            'prodi' => 'required'
+        ];
 
-        if (!$rules) {
-            return $this->failValidationErrors([
-                'message' => $this->validator->getErrors()
-            ]);
+        if (!$this->validate($rules)) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
-        $nama  = $this->request->getVar('nama');
-        $nidn  = $this->request->getVar('nidn');
-        $email = $this->request->getVar('email');
-        $prodi = $this->request->getVar('prodi');
 
-        $this->db->query("INSERT INTO dosens(nama, nidn, email, prodi) VALUES(?,?,?,?)", [$nama, $nidn, $email, $prodi]);
+        $data = $this->request->getJSON(true);
+        $this->model->insert($data);
 
         return $this->respondCreated([
-            'message' => 'Data Dosen berhasil Ditambahkan'
+            'message' => 'Data dosen berhasil ditambahkan',
+            'data' => $data
         ]);
     }
 
@@ -116,33 +101,28 @@ class DosenController extends ResourceController
      */
     public function update($id = null)
     {
-        $query = $this->db->query("SELECT * FROM dosens WHERE id = ?", [$id]);
-        if ($query->getRow() === null) {
+        $dosen = $this->model->find($id);
+        if (!$dosen) {
             return $this->failNotFound('Data dosen tidak ditemukan');
         }
 
-        $rules = $this->validate([
+        $rules = [
             'nama'  => 'required',
             'nidn'  => 'required',
             'email' => 'required|valid_email',
-            'prodi' => 'required',
-        ]);
+            'prodi' => 'required'
+        ];
 
-        if (!$rules) {
-            return $this->failValidationErrors([
-                'message' => $this->validator->getErrors()
-            ]);
+        if (!$this->validate($rules)) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
 
-        $nama  = $this->request->getVar('nama');
-        $nidn  = $this->request->getVar('nidn');
-        $email = $this->request->getVar('email');
-        $prodi = $this->request->getVar('prodi');
-
-        $this->db->query("UPDATE dosens SET nama = ?, nidn = ?, email = ?, prodi = ? WHERE id = ?", [$nama, $nidn, $email, $prodi, $id]);
+        $data = $this->request->getJSON(true);
+        $this->model->update($id, $data);
 
         return $this->respond([
-            'message' => 'Data dosen berhasil diubah'
+            'message' => 'Data dosen berhasil diupdate',
+            'data' => $data
         ]);
     }
 
@@ -155,14 +135,14 @@ class DosenController extends ResourceController
      */
     public function delete($id = null)
     {
-        $query = $this->db->query("SELECT * FROM dosens WHERE id = ?", [$id]);
-        if ($query->getRow() === null) {
-            return $this->failNotFound('Data Dosen Tidak Ditemukan');
+        $dosen = $this->model->find($id);
+        if (!$dosen) {
+            return $this->failNotFound('Data dosen tidak ditemukan');
         }
-        $this->db->query("DELETE FROM dosens WHERE id = ?", [$id]);
 
+        $this->model->delete($id);
         return $this->respondDeleted([
-            'message' => 'Data Dosen Berhasil Dihapus'
+            'message' => 'Data dosen berhasil dihapus'
         ]);
     }
 }
